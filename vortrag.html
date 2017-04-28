@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Vortrag Linuxtage 2017</title>
+
+    <link rel="stylesheet" href="css/reveal.css">
+<!--    <link rel="stylesheet" href="css/theme/black.css">-->
+<!--    <link rel="stylesheet" href="css/theme/serif.css">-->
+       <link rel="stylesheet" href="css/theme/white.css">
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section data-background-iframe="https://www.netconomy.net">
+        </section>
+<!--        <section data-transition="slide-in and fade-out ">-->
+
+        <section data-markdown data-background-iframe="background.html">
+        <script type="text/template">
+        ## Saltstack installiert
+        ## // Pacemaker
+        ## // MySQL
+        ## // Galera automatisch
+        __Ein Vortrag von Holger Fischer und Martin Maurer__
+        </script>
+        </section>
+        <section data-markdown data-background-iframe="background.html">
+              ### Agenda
+
+              * Vorstellung Vortragende
+              * Warum saltstack?
+              * About Master, Minions and Pillars ...
+              * Formulas
+              * Work in progress ...
+              * Questions?
+        </section>
+        <section>
+                <section data-markdown data-background-iframe="background.html">
+                ### Agenda
+                * Vorstellung Vortragende
+                </section>
+
+                <section data-markdown data-background-iframe="background.html">
+                  ### Holger Fischer
+                  _Linux-User und Automatisierungs-Fan_
+
+                  Seit ca. 20 Jahren Linux-User, seit ca. 10 Jahren Linux-Administrator/Operations-Mitarbeiter. Verfechter von DevOps und agilen Methoden.
+                  Interessiert an Automatisierung und Clouds.
+
+                  *Advanced Security Engineering - Master-Studium an der FH Joanneum. *
+                </section>
+
+                <section data-markdown data-background-iframe="background.html">
+                  ### Martin Maurer
+                  _Linux-User seit einer gefühlten Ewigkeit und trotzdem noch immer gespannt auf neues_
+
+                  Seit einer gefühlten Ewigkeit System Administrator für Microsoft Windows, Linux und macOS Umgebungen und immer auf der Suche nach Möglichkeiten, mir Arbeit zu ersparen und das System runder laufen zu lassen.
+
+                </section>
+        </section>
+        <section>
+
+                <section data-markdown data-background-iframe="background.html">
+                ### Agenda
+                * Warum saltstack?
+                </section>
+
+
+                <section data-markdown>
+                ### Warum saltstack?
+                >Salt is a remote execution framework and configuration management system. It is similar to Chef, Puppet, Ansible and cfengine. These systems are all written to solve the same basic problem:  __how do you maintain consistency across many machines, whether it is 2 machines or 20,000?__
+
+                 > ` Salt essentials, O´Reilly 2015, Craig Sebenik & Thomas Hatch `
+
+                </section>
+
+                <section data-markdown data-background-iframe="background.html">
+                ### Vorteile von *salt*
+
+                + Möglichkeit Infrastruktur zu coden und von einem Master aus zu steuern
+                + Definition von states
+                + In python geschrieben, damit erweiterbar
+                + Standard Daten in YAML
+                + Möglichkeit von
+                  + impertativen Definition
+                  + deklarativen Definition
+                </section>
+
+                <section data-markdown data-background-iframe="background.html">
+                ### Nachteile von *salt*
+                + Man muss _Code_ schreiben
+                + Einarbeitungszeit notwendig
+                </section>
+        </section>
+        <section>
+                <section data-markdown data-background-iframe="background.html">
+                ### Agenda
+                *About Master, Minions and Pillars ...
+                </section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ### *Minions*
+                  Jeder von salt gemanagte Host ist ein Minion. Auch am Master läuft ein Minion.
+                  </section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ### *Master*
+                  Der Masterserver ist der zentrale Managementserver, der die Forumlas und Pillars der Minions verwaltet.
+                  </section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ### *Pillar*
+                  Pillars sind die "Configdaten" für die einzelnen Minions. Die Pillars werden zentral am Master verwaltet.
+                  </section>
+                   <section data-markdown data-background-iframe="background.html">
+                  ### *Kommunikation*
+                  + Minions: kennen ihren Master per DNS oder IP Adresse
+                  + über TCP/IP Port 4505 / 4506
+                  + Handshake wie bei SSH
+                  + ZeroMQ:
+                    + Master: publisher
+                    + Minion: subscriber
+                  </section>
+                  <section data-markdown data-background-iframe="background.html">
+                  ##### Beispiel (state top.sls):
+                  ```python
+                  glt2017:
+                          '*':
+                            - match: compound
+                            - repoconf
+                            - firewalld
+                            - hosts
+                            - chrony
+                            - serverpackages
+                          'salt*':
+                            - match: compound
+                            - salt.formulas
+                            - salt.master
+                          'db*':
+                            - match: compound
+                            - salt.minion
+                            # all services from here on must be deployed via orchestration
+                            # 1. pcs -> to get cluster up and running
+                            # and after that all other services which should be started by the cluster
+                  ```
+
+                  </section>
+      </section>
+          <section>
+
+              <section data-markdown data-background-iframe="background.html">
+              ### Agenda
+              * Formulas
+              </section>
+
+              <section data-markdown data-background-iframe="background.html">
+              ### *Formulas*
+              Das sind vorbereitete states. Damit können
+              + Packete installiert werden
+              + Services gestartet werden
+              + vorbereitete Konfigurationen bereitgestellt werden
+              </section>
+
+              <section data-background-iframe="https://docs.saltstack.com/en/latest/">
+              </section>
+
+             <section data-background-iframe="https://docs.saltstack.com/en/latest/ref/states/all/">
+              </section>
+
+              <section data-markdown data-background-iframe="background.html">
+              ##### Beispiel (1):
+              ```python
+                    {% set mysaltymaster = 'salt*' %}
+                    {% set galeranodes = 'db*' %}
+
+                    #salt -C 'db*' --state-verbose='False' --timeout 1800 state.highstate
+                    galera_orchestrate__highstate:
+                      salt.state:
+                        - tgt: {{galeranodes}}
+                        - tgt_type: compound
+                        - expect_minions: True
+                        - highstate: True
+                    #    - saltenv: "glt2017"
+                        - timeout: 1800
+                ```
+
+              </section>
+              <section data-markdown data-background-iframe="background.html">
+              ##### Beispiel (2):
+              ```python
+                    #salt-call --state-verbose='False' --timeout 1800 state.sls pcs.orchestration saltenv='glt2017'
+                    galera_orchestrate__pcs:
+                      salt.state:
+                        - tgt: {{mysaltymaster}}
+                        - expect_minions: True
+                        - sls: pcs.orchestration
+                        - saltenv: "glt2017"
+                        - timeout: 1800
+                        - require:
+                          - salt: galera_orchestrate__highstate
+              ```
+
+                  </section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ##### Beispiel (3):
+                  ```python
+                  #salt-call --state-verbose='False' --timeout 1800 state.sls mysql.orchestration.server saltenv='glt2017'
+                        galera_orchestrate__mysql:
+                          salt.state:
+                            - tgt: {{mysaltymaster}}
+                            - expect_minions: True
+                            - sls: mysql.orchestration.server
+                            - saltenv: "glt2017"
+                            - timeout: 1800
+                            - require:
+                              - salt: galera_orchestrate__pcs
+                  ```
+
+                  </section>
+
+              </section>
+
+              <section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ### Agenda
+                  * Work in progress ...
+                  </section>
+              </section>
+
+              <section>
+                  <section data-markdown data-background-iframe="background.html">
+                 ### Agenda
+                  * Questions?
+                  </section>
+
+                  <section data-markdown data-background-iframe="background.html">
+                  ### Danke für Ihre Aufmerksamkeit!
+                  </section>
+
+<!--              </section>-->
+
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+      // More info https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        history: true,
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+          { src: 'plugin/markdown/marked.js' },
+          { src: 'plugin/markdown/markdown.js' },
+          { src: 'plugin/notes/notes.js', async: true },
+          { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+        ]
+      });
+    </script>
+  </body>
+</html>
